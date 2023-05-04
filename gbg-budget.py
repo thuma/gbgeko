@@ -23,7 +23,8 @@ types = [
   "text",
   "real"]
 
-urls = ["https://catalog.goteborg.se/rowstore/dataset/62244395-eb02-41eb-94ce-0ab89378932a"]
+#urls = ["https://catalog.goteborg.se/rowstore/dataset/62244395-eb02-41eb-94ce-0ab89378932a"] #2022
+urls = ["https://catalog.goteborg.se/rowstore/dataset/989c82b9-8ba0-40f4-8214-a96df84f8d86"] #2023
 
 cols = []
 for i in range(0,len(headers)):
@@ -56,4 +57,5 @@ for url in urls:
   add_to_db(result.json()["results"])
   while "next" in result.json():
     result = requests.get(result.json()["next"], headers={"Accept":"application/json"});
+    print(result.content)
     add_to_db(result.json()["results"])

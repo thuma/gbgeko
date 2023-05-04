@@ -74,7 +74,7 @@ def index():
   headervalues = {}
   for header in headers:
     if header not in [ "belopp exkl moms", "summa", "konto", "organisationsnummer"]:
-      q = "SELECT %s FROM bills %s GROUP BY %s ORDER BY %s LIMIT 150;" % (header, filters ,header,header)
+      q = "SELECT %s FROM bills %s GROUP BY %s ORDER BY %s;" % (header, filters ,header,header)
       if not header == "verifikationsnummer":
         headervalues[header] = conn.execute(q)
       else:
