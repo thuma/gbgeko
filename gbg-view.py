@@ -12,14 +12,14 @@ import json
 conn = sqlite3.connect('gbg.db')
 
 headers = [
-  "Förvaltning",
-  "Leverantör",
-  "Organisationsnummer",
-  "Verifikationsnummer",
-  "Konto",
-  "Kontotext",
-  "Belopp",
-  "Summa"]
+  "förvaltning",
+  "leverantör",
+  "organisationsnummer",
+  "verifikationsnummer",
+  "konto",
+  "kontotext",
+  "belopp exkl moms",
+  "summa"]
 
 # Help Bottle find our templates
 base_path = os.path.abspath(os.path.dirname(__file__))
@@ -32,7 +32,7 @@ app = default_app()
 def format(rows):
   for row in rows:
     thisrow = list(row)
-    thisrow[-1] = "{:.2f}".format(thisrow[-1])
+    thisrow[-1] = "{:.2f}".format(thisrow[-1]/100)
     size = len(thisrow[-1])
     final = ""
     for a in range(1,size+1):
@@ -73,9 +73,9 @@ def index():
   result = conn.execute(q)
   headervalues = {}
   for header in headers:
-    if header not in [ "Belopp", "Summa", "Konto", "Organisationsnummer"]:
+    if header not in [ "belopp exkl moms", "summa", "konto", "organisationsnummer"]:
       q = "SELECT %s FROM bills %s GROUP BY %s ORDER BY %s LIMIT 150;" % (header, filters ,header,header)
-      if not header == "Verifikationsnummer":
+      if not header == "verifikationsnummer":
         headervalues[header] = conn.execute(q)
       else:
         headervalues[header] = []

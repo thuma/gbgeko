@@ -2,18 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import requests
-from openpyxl import load_workbook
 import sqlite3
 conn = sqlite3.connect('gbg.db')
 
 headers = [
-  "Förvaltning",
-  "Leverantör",
-  "Organisationsnummer",
-  "Verifikationsnummer",
-  "Konto",
-  "Kontotext",
-  "Belopp"]
+  "förvaltning", 
+  "leverantör",
+  "organisationsnummer",
+  "verifikationsnummer",
+  "konto",
+  "kontotext",
+  "belopp exkl moms"]
 
 types = [
   "text",
@@ -24,19 +23,7 @@ types = [
   "text",
   "real"]
 
-urls = [
-  "https://catalog.goteborg.se/store/6/resource/504",
-  "https://catalog.goteborg.se/store/6/resource/456",
-  "https://catalog.goteborg.se/store/6/resource/346",
-  "https://catalog.goteborg.se/store/6/resource/300",
-  "https://catalog.goteborg.se/store/6/resource/298",
-  "https://catalog.goteborg.se/store/6/resource/293",
-  "https://catalog.goteborg.se/store/6/resource/291",
-  "https://catalog.goteborg.se/store/6/resource/207",
-  "https://catalog.goteborg.se/store/6/resource/175",
-  "https://catalog.goteborg.se/store/6/resource/149",
-  "https://catalog.goteborg.se/store/6/resource/143",
-  "https://catalog.goteborg.se/store/6/resource/106"]
+urls = ["https://catalog.goteborg.se/rowstore/dataset/62244395-eb02-41eb-94ce-0ab89378932a"]
 
 cols = []
 for i in range(0,len(headers)):
@@ -45,27 +32,28 @@ cols = ', '.join(cols)
 
 make = "CREATE TABLE IF NOT EXISTS bills (%s)" % cols
 conn.execute(make)
-conn.execute('''CREATE UNIQUE INDEX IF NOT EXISTS Verifikationsnummer on bills (Verifikationsnummer)''')
+conn.execute('''CREATE UNIQUE INDEX IF NOT EXISTS verifikationsnummer on bills (verifikationsnummer)''')
 conn.commit()
 
-for url in urls:
-  result = requests.get(url);
-  with  open('test.xlsx','w') as file:
-   file.write(result.content)
-  wb2 = load_workbook('test.xlsx')
-  for row in wb2[wb2.get_sheet_names()[0]].iter_rows(row_offset=1):
-    data = []
-    for col in range(0,len(headers)):
-      coldata = row[col].value;
-      if not coldata:
-        coldata = ""
-      if isinstance(coldata, unicode):
-        coldata = coldata.encode('utf-8')
-      coldata = "%s" % coldata
-      coldata = coldata.replace('"',"'")
-      data.append('"'+coldata+'"')
-    data = ','.join(data)
-    insert = ("INSERT OR IGNORE INTO bills VALUES (%s)" % data)
-    print insert
+def add_to_db(rader):
+  for rad in rader:
+    rad["förvaltning"] = rad["﻿förvaltning"]
+    cols = []
+    for head in headers:
+      if head == "belopp exkl moms":
+        cols.append(int(rad[head].replace(" ", "").replace(",","")))
+      else:
+        cols.append(rad[head])
+    insert = ('INSERT OR IGNORE INTO bills VALUES ("%s","%s","%s","%s","%s","%s",%i)' % tuple(cols))
+    print(insert)
     conn.execute(insert)
   conn.commit()
+
+for url in urls:
+  result = requests.get(url, headers={"Accept":"application/json"});
+  print(result.content)
+  print(result.encoding)
+  add_to_db(result.json()["results"])
+  while "next" in result.json():
+    result = requests.get(result.json()["next"], headers={"Accept":"application/json"});
+    add_to_db(result.json()["results"])
